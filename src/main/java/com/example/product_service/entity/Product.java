@@ -10,6 +10,7 @@ import org.springframework.data.redis.core.RedisHash;
 @AllArgsConstructor
 @Data
 @EntityScan
+@Builder
 public class Product {
     @Id
     private String productId;
@@ -17,6 +18,7 @@ public class Product {
     private String userId;
     private String status;
     private Integer quantity;
+    private Double unitPrice;
 
 
     public Product(String productId, int quantity) {

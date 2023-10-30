@@ -1,5 +1,6 @@
 package com.example.product_service.controller;
 
+import com.example.product_service.dto.CheckoutRequestDTO;
 import com.example.product_service.dto.ProductRequestDTO;
 import com.example.product_service.dto.ProductResponseDTO;
 import com.example.product_service.entity.Product;
@@ -29,5 +30,10 @@ public class ProductController {
     @PostMapping("/add")
     public void add(@RequestBody final ProductRequestDTO requestDTO){
         this.service.addProduct(requestDTO);
+    }
+
+    @PostMapping("/checkout")
+    public String checkout(@RequestBody final CheckoutRequestDTO requestDTO){
+        return this.service.checkout(requestDTO);
     }
 }

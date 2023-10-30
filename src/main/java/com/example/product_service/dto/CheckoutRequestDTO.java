@@ -1,20 +1,21 @@
 package com.example.product_service.dto;
 
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashMap;
+
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProductRequestDTO {
-    private String productId;
-    private Double unitPrice;
-    private String orderId;
+public class CheckoutRequestDTO {
     private String userId;
-    private String status;
-    private Integer quantity;
+
+    //<productId, quantity>
+    private HashMap<String, Integer> products;
 
 }
