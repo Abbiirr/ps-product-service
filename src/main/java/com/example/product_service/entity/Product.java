@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
 
-@RedisHash("Student")
+@RedisHash("Product")
 @RequiredArgsConstructor
 @AllArgsConstructor
 @Data
