@@ -31,23 +31,23 @@ public class ProductService {
     private final ProductRepository productRepository;
 
 
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final KafkaMessageFormatter kafkaTemplate;
 
-    public ProductService(ProductRepository productRepository, KafkaTemplate<String, String> kafkaTemplate) {
+    public ProductService(ProductRepository productRepository, KafkaMessageFormatter kafkaTemplate) {
         this.productRepository = productRepository;
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    @PostConstruct
-    private void init() {
-        productMap = new HashMap<>();
-        List<Product> products = StreamSupport
-                .stream(productRepository.findAll().spliterator(), false)
-                .toList();
-        for (Product product : products) {
-            productMap.put(product.getProductId(), product.getQuantity());
-        }
-    }
+//    @PostConstruct
+//    private void init() {
+//        productMap = new HashMap<>();
+//        List<Product> products = StreamSupport
+//                .stream(productRepository.findAll().spliterator(), false)
+//                .toList();
+//        for (Product product : products) {
+//            productMap.put(product.getProductId(), product.getQuantity());
+//        }
+//    }
 
     public List<Product> getAllProducts() {
         Iterable<Product> products = productRepository.findAll();
@@ -78,7 +78,7 @@ public class ProductService {
         return responseDTO;
     }
 
-    public void addProduct(final ProductRequestDTO requestDTO) {
+    public String addProduct(final ProductRequestDTO requestDTO) {
         String productId = requestDTO.getProductId();
         Product product = productRepository.findById(productId).orElse(Product.builder()
                 .productId(requestDTO.getProductId())
@@ -88,12 +88,11 @@ public class ProductService {
         product.setQuantity(product.getQuantity() + requestDTO.getQuantity());
         product.setUnitPrice(requestDTO.getUnitPrice());
         productRepository.save(product);
-
+        return "Product added successfully";
 
     }
 
     public String checkout(CheckoutRequestDTO requestDTO) {
-        //TODO: check if user exists: can't do from this service
         List<Product> products = this.productsAvailable(requestDTO.getProducts());
         if (products == null) {
             return "Products not available";
@@ -104,12 +103,10 @@ public class ProductService {
         //TODO: if all checks pass, publish to kafka
         CheckoutEventDTO eventDTO = new CheckoutEventDTO(requestDTO.getUserId(), requestDTO.getProducts(), totalPrice);
 
-        return this.sendMessage(eventDTO);
+        return kafkaTemplate.sendMessage(eventDTO);
     }
 
     private List<Product> productsAvailable(Map<String, Integer> products) {
-        // Implement logic to check if products exist and have sufficient quantity
-        // You might use the productRepository or a product service for this
 
         List<Product> availableProducts = new ArrayList<>();
 
@@ -158,30 +155,30 @@ public class ProductService {
         return null; // Return null if the product is not found
     }
 
-    public String sendMessage(CheckoutEventDTO requestDTO) {
-        String message;
-        try {
-            message = KafkaMessageFormatter.formatCheckoutRequest(requestDTO);
-        } catch (JsonProcessingException e) {
-            String errorMessage = "Failed to format the message due to: " + e.getMessage();
-            System.out.println(errorMessage);
-            return errorMessage;
-        }
-        AtomicReference<String> responseMessage = new AtomicReference<>("Message Sent");
-        CompletableFuture<SendResult<String, String>> future = kafkaTemplate.send(KafkaTopics.CHECKOUT_TOPIC.getTopicName(), message);
-        future.whenComplete((result, ex) -> {
-            if (ex == null) {
-                responseMessage.set("Sent message=[" + message +
-                        "] with offset=[" + result.getRecordMetadata().offset() + "]");
-                System.out.println(responseMessage);
-            } else {
-                responseMessage.set("Unable to send message=[" +
-                        message + "] due to : " + ex.getMessage());
-                System.out.println(responseMessage);
-            }
-        });
-
-        return responseMessage.get(); // Message sent successfully
-    }
+//    public String sendMessage(CheckoutEventDTO requestDTO) {
+//        String message;
+//        try {
+//            message = KafkaMessageFormatter.formatCheckoutRequest(requestDTO);
+//        } catch (JsonProcessingException e) {
+//            String errorMessage = "Failed to format the message due to: " + e.getMessage();
+//            System.out.println(errorMessage);
+//            return errorMessage;
+//        }
+//        AtomicReference<String> responseMessage = new AtomicReference<>("Message Sent");
+//        CompletableFuture<SendResult<String, String>> future = kafkaTemplate.send(KafkaTopics.CHECKOUT_TOPIC.getTopicName(), message);
+//        future.whenComplete((result, ex) -> {
+//            if (ex == null) {
+//                responseMessage.set("Sent message=[" + message +
+//                        "] with offset=[" + result.getRecordMetadata().offset() + "]");
+//                System.out.println(responseMessage);
+//            } else {
+//                responseMessage.set("Unable to send message=[" +
+//                        message + "] due to : " + ex.getMessage());
+//                System.out.println(responseMessage);
+//            }
+//        });
+//
+//        return responseMessage.get(); // Message sent successfully
+//    }
 
 }
