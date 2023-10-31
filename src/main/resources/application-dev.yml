@@ -1,0 +1,19 @@
+spring:
+  data:
+    redis:
+      port: 26379
+      password:
+      sentinel:
+        master: mymaster
+        nodes: localhost
+  cache:
+    type: redis
+    redis:
+      cache-null-values: false
+      time-to-live: 300000
+  kafka:
+    bootstrap-servers: localhost:8097
+
+server:
+  port: 8082
+
