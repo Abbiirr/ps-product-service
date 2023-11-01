@@ -15,10 +15,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -56,6 +53,16 @@ public class ProductService {
 
     }
 
+    public Product checkProductAvailablity(String productId, int quantity) {
+        Optional<Product> product = productRepository.findById(productId);
+        if(!product.isPresent()) {
+            return null;
+        }
+        if(product.get().getQuantity() >= quantity)
+            return product.get();
+        return null;
+    }
+
     public ProductResponseDTO deductProduct(final ProductRequestDTO requestDTO) {
         String productId = requestDTO.getProductId();
         int requestedQuantity = requestDTO.getQuantity();
@@ -76,6 +83,23 @@ public class ProductService {
         }
 
         return responseDTO;
+    }
+
+    public String deductProduct(String productId, int requestedQuantity) {
+        Product product = productRepository.findById(productId).orElse(new Product(productId, 0));
+        int availableQuantity = product.getQuantity();
+
+        ProductResponseDTO responseDTO = new ProductResponseDTO();
+        responseDTO.setStatus(ProductStatus.UNAVAILABLE);
+
+        if (availableQuantity >= requestedQuantity) {
+            responseDTO.setStatus(ProductStatus.AVAILABLE);
+            product.setQuantity(availableQuantity - requestedQuantity);
+            productRepository.save(product);
+            return "Product Deducted";
+        }
+
+        return "Operation failed";
     }
 
     public String addProduct(final ProductRequestDTO requestDTO) {
