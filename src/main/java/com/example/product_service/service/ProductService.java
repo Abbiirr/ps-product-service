@@ -116,6 +116,14 @@ public class ProductService {
 
     }
 
+    public String addProduct(String productId, int requestedQuantity) {
+        Product product = productRepository.findById(productId).orElse(new Product(productId, 0));
+        product.setQuantity(product.getQuantity() + product.getQuantity());
+        productRepository.save(product);
+        return "Product added successfully";
+
+    }
+
 //    public String checkout(CheckoutRequestDTO requestDTO) {
 //        List<Product> products = this.productsAvailable(requestDTO.getProducts());
 //        if (products == null) {

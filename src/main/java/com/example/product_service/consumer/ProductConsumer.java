@@ -11,10 +11,8 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class ProductConsumer {
@@ -22,6 +20,9 @@ public class ProductConsumer {
     private final ProductService productService;
 
     private final KafkaMessager kafkaMessager;
+        private final Set<String> deductProductEvents = ConcurrentHashMap.newKeySet();
+        private final Set<String> addProductEvents = ConcurrentHashMap.newKeySet();
+
 
     public ProductConsumer(ProductService productService, KafkaMessager kafkaMessager) {
         this.productService = productService;
@@ -32,7 +33,14 @@ public class ProductConsumer {
     public String deductProductListener(String message, Acknowledgment acknowledgment) {
 //        ProductsDTO paymentRequestDTO = MessageToDTOConverter.convertToProductsDTO(message);
 
-        // Step 1: Initialize a list to store products that are not available
+        String eventId = MessageToDTOConverter.getField(message, "eventId");
+        if(deductProductEvents.contains(eventId)){
+            acknowledgment.acknowledge();
+            return "Completed";
+        }
+        else {
+            deductProductEvents.add(eventId);
+        }
         List<Product> productsToDeduct = new ArrayList<>();
 
         Double totalPrice = 0.0;
@@ -89,6 +97,14 @@ public class ProductConsumer {
 
     @KafkaListener(topics = "add_products", groupId = "group_1", containerFactory = "kafkaListenerContainerFactory")
     public String addProductListener(String message, Acknowledgment acknowledgment) {
+        String eventId = MessageToDTOConverter.getField(message, "eventId");
+        if(addProductEvents.contains(eventId)){
+            acknowledgment.acknowledge();
+            return "Completed";
+        }
+        else {
+            addProductEvents.add(eventId);
+        }
         ProductsDTO paymentRequestDTO = MessageToDTOConverter.convertToProductsDTO(message);
 
         // Step 1: Initialize a list to store products that are not available
@@ -102,7 +118,7 @@ public class ProductConsumer {
             String productId = entry.getKey();
             int requestedQuantity = entry.getValue();
 
-            String response = productService.deductProduct(productId, requestedQuantity);
+            String response = productService.addProduct(productId, requestedQuantity);
 
         }
 

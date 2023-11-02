@@ -31,6 +31,12 @@ public class KafkaProducerConfig {
         configProps.put(
           ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
           StringSerializer.class);
+        configProps.put(
+                ProducerConfig.ACKS_CONFIG,
+                "all");
+        configProps.put(
+                ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG,
+                "true");
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 
