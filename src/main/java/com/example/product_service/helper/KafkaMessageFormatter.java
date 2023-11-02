@@ -1,9 +1,11 @@
 package com.example.product_service.helper;
 
-import com.example.orchestrator_service.dto.CheckoutEventDTO;
+import com.example.product_service.dto.CheckoutEventDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.stereotype.Component;
 
+@Component
 public class KafkaMessageFormatter {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 

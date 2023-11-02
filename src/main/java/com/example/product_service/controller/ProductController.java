@@ -17,7 +17,7 @@ public class ProductController {
     @Autowired
     private ProductService service;
 
-    @GetMapping("")
+    @GetMapping("/all")
     public List<Product> getAllProducts() {
         return this.service.getAllProducts();
     }
@@ -32,8 +32,8 @@ public class ProductController {
         return this.service.addProduct(requestDTO);
     }
 
-    @PostMapping("/checkout")
-    public String checkout(@RequestBody final CheckoutRequestDTO requestDTO){
-        return this.service.checkout(requestDTO);
-    }
+//    @PostMapping("/checkout")
+//    public String checkout(@RequestBody final CheckoutRequestDTO requestDTO){
+//        return this.service.checkout(requestDTO);
+//    }
 }

@@ -8,6 +8,7 @@ import com.example.product_service.helper.KafkaMessager;
 import com.example.product_service.helper.MessageToDTOConverter;
 import com.example.product_service.service.ProductService;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -28,8 +29,8 @@ public class ProductConsumer {
     }
 
     @KafkaListener(topics = "deduct_products", groupId = "group_1", containerFactory = "kafkaListenerContainerFactory")
-    public String deductProductListener(String message) {
-        ProductsDTO paymentRequestDTO = MessageToDTOConverter.convertToProductsDTO(message);
+    public String deductProductListener(String message, Acknowledgment acknowledgment) {
+//        ProductsDTO paymentRequestDTO = MessageToDTOConverter.convertToProductsDTO(message);
 
         // Step 1: Initialize a list to store products that are not available
         List<Product> productsToDeduct = new ArrayList<>();
@@ -37,7 +38,19 @@ public class ProductConsumer {
         Double totalPrice = 0.0;
 
         // Step 2: Iterate over the products in the productMap and check availability
-        HashMap<String, Integer> productMap = paymentRequestDTO.getProducts();
+        HashMap<String, Integer> productMap = MessageToDTOConverter.getProductsMapFromMessage(message, "products");
+        if(productMap == null){
+            message = MessageToDTOConverter.setField(message, "status", "fail");
+            String response = kafkaMessager.sendMessage(KafkaTopics.POST_DEDUCT_PRODUCTS.getTopicName(), message);
+            acknowledgment.acknowledge();
+            return "No products found";
+        }
+        if (productMap == null) {
+            message = MessageToDTOConverter.setField(message, "status", "fail");
+            String response = kafkaMessager.sendMessage(KafkaTopics.POST_DEDUCT_PRODUCTS.getTopicName(), message);
+            acknowledgment.acknowledge();
+            return "No products found";
+        }
         for (Map.Entry<String, Integer> entry : productMap.entrySet()) {
             String productId = entry.getKey();
             int requestedQuantity = entry.getValue();
@@ -62,12 +75,42 @@ public class ProductConsumer {
 
         }
 
-        DebitBalanceDTO debitBalanceDTO = new DebitBalanceDTO(MessageToDTOConverter.getUserId(message),
-                MessageToDTOConverter.getOrderId(message), totalPrice);
+//        DebitBalanceDTO debitBalanceDTO = new DebitBalanceDTO(MessageToDTOConverter.getUserId(message),
+//                MessageToDTOConverter.getOrderId(message), totalPrice);
+
+        message = MessageToDTOConverter.addPriceToMessage(message, totalPrice);
+        // Step 5: Send a message to another Kafka topic
+        String response = kafkaMessager.sendMessage(KafkaTopics.POST_DEDUCT_PRODUCTS.getTopicName(), message);
+        acknowledgment.acknowledge();
+        return response;
+
+
+    }
+
+    @KafkaListener(topics = "add_products", groupId = "group_1", containerFactory = "kafkaListenerContainerFactory")
+    public String addProductListener(String message, Acknowledgment acknowledgment) {
+        ProductsDTO paymentRequestDTO = MessageToDTOConverter.convertToProductsDTO(message);
+
+        // Step 1: Initialize a list to store products that are not available
+        List<Product> productsToDeduct = new ArrayList<>();
+
+        // Step 2: Iterate over the products in the productMap and check availability
+        HashMap<String, Integer> productMap = paymentRequestDTO.getProducts();
+
+
+        for (Map.Entry<String, Integer> entry : productMap.entrySet()) {
+            String productId = entry.getKey();
+            int requestedQuantity = entry.getValue();
+
+            String response = productService.deductProduct(productId, requestedQuantity);
+
+        }
 
 
         // Step 5: Send a message to another Kafka topic
-        return kafkaMessager.sendMessage(KafkaTopics.POST_DEDUCT_PRODUCTS.getTopicName(), debitBalanceDTO);
+        String response = kafkaMessager.sendMessage(KafkaTopics.POST_ADD_PRODUCTS.getTopicName(), message);
+        acknowledgment.acknowledge();
+        return response;
 
 
     }

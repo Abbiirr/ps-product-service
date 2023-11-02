@@ -116,19 +116,19 @@ public class ProductService {
 
     }
 
-    public String checkout(CheckoutRequestDTO requestDTO) {
-        List<Product> products = this.productsAvailable(requestDTO.getProducts());
-        if (products == null) {
-            return "Products not available";
-        }
-        double totalPrice = this.calculateTotalPrice(requestDTO.getProducts(), products);
-
-
-        //TODO: if all checks pass, publish to kafka
-        CheckoutEventDTO eventDTO = new CheckoutEventDTO(requestDTO.getUserId(), requestDTO.getProducts(), totalPrice);
-
-        return kafkaTemplate.sendMessage(eventDTO);
-    }
+//    public String checkout(CheckoutRequestDTO requestDTO) {
+//        List<Product> products = this.productsAvailable(requestDTO.getProducts());
+//        if (products == null) {
+//            return "Products not available";
+//        }
+//        double totalPrice = this.calculateTotalPrice(requestDTO.getProducts(), products);
+//
+//
+//        //TODO: if all checks pass, publish to kafka
+//        CheckoutEventDTO eventDTO = new CheckoutEventDTO(requestDTO.getUserId(), requestDTO.getProducts(), totalPrice);
+//
+//        return kafkaTemplate.sendMessage(eventDTO);
+//    }
 
     private List<Product> productsAvailable(Map<String, Integer> products) {
 
