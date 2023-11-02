@@ -1,9 +1,9 @@
 package com.example.product_service.consumer;
 
-import com.example.product_service.dto.DebitBalanceDTO;
 import com.example.product_service.dto.ProductsDTO;
 import com.example.product_service.entity.Product;
 import com.example.product_service.enums.KafkaTopics;
+import com.example.product_service.helper.EventFinder;
 import com.example.product_service.helper.KafkaMessager;
 import com.example.product_service.helper.MessageToDTOConverter;
 import com.example.product_service.service.ProductService;
@@ -23,10 +23,13 @@ public class ProductConsumer {
         private final Set<String> deductProductEvents = ConcurrentHashMap.newKeySet();
         private final Set<String> addProductEvents = ConcurrentHashMap.newKeySet();
 
+        private final EventFinder eventFinder;
 
-    public ProductConsumer(ProductService productService, KafkaMessager kafkaMessager) {
+
+    public ProductConsumer(ProductService productService, KafkaMessager kafkaMessager, EventFinder eventFinder) {
         this.productService = productService;
         this.kafkaMessager = kafkaMessager;
+        this.eventFinder = eventFinder;
     }
 
     @KafkaListener(topics = "deduct_products", groupId = "group_1", containerFactory = "kafkaListenerContainerFactory")
@@ -34,12 +37,13 @@ public class ProductConsumer {
 //        ProductsDTO paymentRequestDTO = MessageToDTOConverter.convertToProductsDTO(message);
 
         String eventId = MessageToDTOConverter.getField(message, "eventId");
-        if(deductProductEvents.contains(eventId)){
+        if(eventId == null){
             acknowledgment.acknowledge();
-            return "Completed";
+            return "No event id";
         }
-        else {
-            deductProductEvents.add(eventId);
+        if(eventFinder.findDuplicateOrNot(eventId, "deductProductListener")){
+            acknowledgment.acknowledge();
+            return "Duplicate event";
         }
         List<Product> productsToDeduct = new ArrayList<>();
 
@@ -98,12 +102,13 @@ public class ProductConsumer {
     @KafkaListener(topics = "add_products", groupId = "group_1", containerFactory = "kafkaListenerContainerFactory")
     public String addProductListener(String message, Acknowledgment acknowledgment) {
         String eventId = MessageToDTOConverter.getField(message, "eventId");
-        if(addProductEvents.contains(eventId)){
+        if(eventId == null){
             acknowledgment.acknowledge();
-            return "Completed";
+            return "No event id";
         }
-        else {
-            addProductEvents.add(eventId);
+        if(eventFinder.findDuplicateOrNot(eventId, "addProductListener")){
+            acknowledgment.acknowledge();
+            return "Duplicate event";
         }
         ProductsDTO paymentRequestDTO = MessageToDTOConverter.convertToProductsDTO(message);
 

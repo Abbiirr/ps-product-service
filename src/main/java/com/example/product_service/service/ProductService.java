@@ -118,7 +118,7 @@ public class ProductService {
 
     public String addProduct(String productId, int requestedQuantity) {
         Product product = productRepository.findById(productId).orElse(new Product(productId, 0));
-        product.setQuantity(product.getQuantity() + product.getQuantity());
+        product.setQuantity(product.getQuantity() + requestedQuantity);
         productRepository.save(product);
         return "Product added successfully";
 
